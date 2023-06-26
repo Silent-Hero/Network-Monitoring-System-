@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="configStyles.css" />
+    <title>Configurations</title>
+  </head>
+  <body>
+    <div class="container">
+      <h1>System Configuration</h1>
+      <h3>Test Selection</h3>
+      <div class="radio-group">
+        <label for="pingTest"
+          ><input
+            type="radio"
+            id="pingTest"
+            name="testType"
+            value="ping"
+            checked
+          />Ping Test</label
+        >
+        <label for="iperfTest"
+          ><input
+            type="radio"
+            id="iperfTest"
+            name="testType"
+            value="iperf"
+          />IPerf Test</label
+        >
+      </div>
+
+      <div id="pingTestSection">
+        <form id="pingForm">
+          <div class="form-row">
+            <label for="pingIP">IP Address:</label>
+            <input type="text" id="pingIP" name="pingIP" required />
+          </div>
+
+          <div class="form-row">
+            <label for="pingPort">Port #:</label>
+            <input type="number" id="pingPort" name="pingPort" required />
+          </div>
+
+          <button type="submit">Run Ping Test</button>
+        </form>
+      </div>
+
+      <div id="iperfTestSection" style="display: none">
+        <form id="configForm">
+          <div class="form-row">
+            <label for="serverIP">Server IP:</label>
+            <input type="text" id="serverIP" name="serverIP" required />
+          </div>
+
+          <div class="form-row">
+            <label for="clientIP">Client IP:</label>
+            <input type="text" id="clientIP" name="clientIP" required />
+          </div>
+
+          <div class="form-row">
+            <label for="iperfPort">Port #:</label>
+            <input type="number" id="iperfPort" name="iperfPort" required />
+          </div>
+
+          <div class="form-row">
+            <label for="testDuration">Duration (seconds):</label>
+            <input
+              type="number"
+              id="testDuration"
+              name="testDuration"
+              required
+            />
+          </div>
+
+          <button type="submit">Run IPerf Test</button>
+        </form>
+      </div>
+
+      <div id="results"></div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        document
+          .getElementById("pingTest")
+          .addEventListener("change", function () {
+            document.getElementById("pingTestSection").style.display = "block";
+            document.getElementById("iperfTestSection").style.display = "none";
+          });
+
+        document
+          .getElementById("iperfTest")
+          .addEventListener("change", function () {
+            document.getElementById("pingTestSection").style.display = "none";
+            document.getElementById("iperfTestSection").style.display = "block";
+          });
+
+        // Function to validate the IP address format
+        function validateIPAddress(ipAddress) {
+          var pattern = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+          if (!pattern.test(ipAddress)) {
+            return false;
+          }
+          var octets = ipAddress.split(".");
+          for (var i = 0; i < octets.length; i++) {
+            if (parseInt(octets[i], 10) > 255) {
+              return false;
+            }
+          }
+          return true;
+        }
+
+        // Function to perform the ping test
+        function performPingTest() {
+          var ipAddress = $("#pingIP").val(); // Get the entered IP address
+          var portNumber = $("#pingPort").val(); // Get the entered port number
+
+          // Validate the IP address format
+          if (!validateIPAddress(ipAddress)) {
+            alert("Invalid IP address format!");
+            return;
+          }
+
+          // Perform the ping test by making an AJAX request to the server
+          $.ajax({
+            url: "http://localhost:3000/ping",
+            type: "POST",
+            data: {
+              ipAddress: ipAddress,
+              portNumber: portNumber,
+            },
+            success: function (response) {
+              // Display the ping test result
+              $("#results").text(response.result);
+            },
+            error: function (xhr, status, error) {
+              console.log("Error:", error);
+              alert(
+                "An error occurred during the ping test. Please try again."
+              );
+            },
+          });
+        }
+
+        // Event handler for the ping test form submission
+        $("#pingForm").submit(function (event) {
+          event.preventDefault();
+          performPingTest();
+        });
+
+        // Event handler for the IPerf test form submission
+        $("#configForm").submit(function (event) {
+          event.preventDefault();
+          var serverIP = $("#serverIP").val();
+          var clientIP = $("#clientIP").val();
+          var iperfPort = $("#iperfPort").val();
+          var testDuration = $("#testDuration").val();
+
+          // Perform the IPerf test by making an AJAX request to the server
+          $.ajax({
+            url: "http://localhost:3000/iperf",
+            type: "POST",
+            data: {
+              serverIP: serverIP,
+              clientIP: clientIP,
+              iperfPort: iperfPort,
+              testDuration: testDuration,
+            },
+            success: function (response) {
+              // Display the IPerf test result
+              $("#results").text(response.result);
+            },
+            error: function (xhr, status, error) {
+              console.log("Error:", error);
+              alert(
+                "An error occurred during the IPerf test. Please try again."
+              );
+            },
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
